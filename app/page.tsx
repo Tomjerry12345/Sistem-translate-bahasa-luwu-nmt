@@ -1,101 +1,223 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import Button from "@/components/button";
+import { ResType } from "@/lib/definition";
+import { postGenerateVideo } from "@/lib/services";
+import { useEffect, useRef, useState } from "react";
+
+const Home = () => {
+  const hiddenVideoInput = useRef<HTMLInputElement | null>(null);
+  const hiddenSubtitleInput = useRef<HTMLInputElement | null>(null);
+
+  const [input, setInput] = useState({
+    video: "",
+    subtitle: "",
+  });
+
+  const [fileNames, setFileNames] = useState({
+    video: "Pick video",
+    subtitle: "Pick actual language",
+  });
+
+  const [progress, setProgress] = useState(0);
+
+  const [res, setRes] = useState<ResType | null>(null);
+
+  // const results = [
+  //   {
+  //     indonesia: "Udah bersih",
+  //     luwu: "mapaccingmo?",
+  //     pred: "temba'",
+  //     bleu_score: 0.0,
+  //     rouge1: 0.0,
+  //     rouge2: 0.0,
+  //     rougeL: 0.0,
+  //   },
+  //   {
+  //     indonesia: "Kemana perginya ya",
+  //     luwu: "Umba naolai manjo le?",
+  //     pred: "umba naolai manjo",
+  //     bleu_score: 0.75,
+  //     rouge1: 0.8571428571428571,
+  //     rouge2: 0.8,
+  //     rougeL: 0.8571428571428571,
+  //   },
+  //   {
+  //     indonesia: "Kemana perginya ya",
+  //     luwu: "Umba naolai manjo le?",
+  //     pred: "umba naolai manjo",
+  //     bleu_score: 0.75,
+  //     rouge1: 0.8571428571428571,
+  //     rouge2: 0.8,
+  //     rougeL: 0.8571428571428571,
+  //   },
+  //   {
+  //     indonesia: "Kemana perginya ya",
+  //     luwu: "Umba naolai manjo le?",
+  //     pred: "umba naolai manjo",
+  //     bleu_score: 0.75,
+  //     rouge1: 0.8571428571428571,
+  //     rouge2: 0.8,
+  //     rougeL: 0.8571428571428571,
+  //   },
+  // ];
+
+  useEffect(() => {
+    const eventSource = new EventSource(
+      "http://localhost:5000/status/video_upload_task"
+    );
+
+    eventSource.onmessage = (event) => {
+      setProgress(Number(event.data));
+      if (Number(event.data) >= 100) {
+        eventSource.close();
+      }
+    };
+
+    eventSource.onerror = () => {
+      eventSource.close();
+    };
+
+    return () => {
+      eventSource.close();
+    };
+  }, []);
+
+  const handleChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+    key: "video" | "subtitle"
+  ) => {
+    if (event.target.files && event.target.files[0]) {
+      const file = event.target.files[0];
+      setInput({ ...input, [key]: file });
+      setFileNames({ ...fileNames, [key]: file.name });
+    }
+  };
+
+  const onClickVideo = () => {
+    hiddenVideoInput.current?.click();
+  };
+
+  const onClickSubtitle = () => {
+    hiddenSubtitleInput.current?.click();
+  };
+
+  const onClickGenerate = async () => {
+    console.log(input);
+    const response = await postGenerateVideo(input);
+
+    if (response && response.video_url) {
+      setRes(response); // Menyimpan respons video_url ke state
+      setFileNames({
+        video: "Pick video",
+        subtitle: "Pick actual language",
+      });
+      setInput({
+        video: "",
+        subtitle: "",
+      });
+    } else {
+      alert("Gagal memproses video.");
+    }
+  };
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+    <div
+      className="rounded overflow-hidden shadow-lg p-4"
+      style={{
+        height: "calc(100vh - 32px)",
+        background: "#221D2B",
+      }}
+    >
+      <div className="grid grid-cols-3 gap-4 h-full">
+        <div className="box h-full w-full col-span-2 flex items-center justify-center">
+          {res?.video_url ? (
+            <iframe
+              width="1000"
+              height="600"
+              src={res.video_url} // URL video dari Flask
+              title="Generated Video"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+          ) : (
+            <p className="text-white text-xl">Video belum tersedia</p>
+          )}
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        <div className="box-2 h-full w-full py-2 col-span-1">
+          <h6>Log</h6>
+          <div className="box-view flex flex-col rounded shadow-lg mt-2">
+            {res?.log.map((result, index) => (
+              <pre
+                key={index}
+                style={{
+                  // background: "#f4f4f4",
+                  color: "white",
+                  padding: "10px",
+                  borderRadius: "5px",
+                  // width: "100px",
+                  margin: "10px 0",
+                  maxWidth: "100%", // Batasi lebar maksimal elemen
+                  // whiteSpace: "pre-wrap", // Bungkus teks secara otomatis
+                  // wordWrap: "break-word", // Pecah kata panjang jika melebihi
+                  // overflow: "hidden", // Hindari scroll horizontallebar
+                }}
+              >
+                ============================================================================================
+                <br />
+                indonesia: {result["indonesia"]}
+                <br />
+                luwu: {result["luwu"]}
+                <br />
+                pred: {result["pred"]}
+                <br />
+                BLEU score: {result["bleu_score"]}
+                <br />
+                Rouge-1 Score:: {result["rouge1"]}
+                <br />
+                Rouge-2 Score:: {result["rouge1"]}
+                <br />
+                Rouge-L Score:: {result["rougeL"]}
+                <br />
+                ============================================================================================
+              </pre>
+            ))}
+          </div>
+          <div className="section-button flex items-end">
+            <div className="flex flex-col gap-4 w-full">
+              <input
+                type="file"
+                ref={hiddenVideoInput}
+                onChange={(e) => handleChange(e, "video")}
+                accept="video/*"
+                style={{ display: "none" }}
+              />
+              <input
+                type="file"
+                ref={hiddenSubtitleInput}
+                onChange={(e) => handleChange(e, "subtitle")}
+                accept=".txt"
+                style={{ display: "none" }}
+              />
+              <Button bg="#A12885" onClick={onClickVideo}>
+                {fileNames.video}
+              </Button>
+              <Button bg="#2852A1" onClick={onClickSubtitle}>
+                {fileNames.subtitle}
+              </Button>
+              <Button
+                bg="#28A179"
+                onClick={onClickGenerate}
+                disabled={progress != 0}
+              >
+                {progress === 0 ? "Generate" : `${progress}%`}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
-}
+};
+
+export default Home;
