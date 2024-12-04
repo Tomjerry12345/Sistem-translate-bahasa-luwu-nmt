@@ -165,19 +165,80 @@ const Home = () => {
               >
                 ============================================================================================
                 <br />
-                indonesia: {result["indonesia"]}
+                GRU:
                 <br />
-                luwu: {result["luwu"]}
+                indonesia: {result[0]["indonesia"]}
+                {result[0]["luwu"] && (
+                  <>
+                    {`luwu: ${result[0]["luwu"]}`}
+                    <br />
+                  </>
+                )}
+                pred: {result[0]["pred"]}
                 <br />
-                pred: {result["pred"]}
+                {result[0]["bleu_score"] && (
+                  <>
+                    BLEU score: {result[0]["bleu_score"]}
+                    <br />
+                  </>
+                )}
+                {result[0]["rouge1"] && (
+                  <>
+                    Rouge-1 Score:: {result[0]["rouge1"]}
+                    <br />
+                  </>
+                )}
+                {result[0]["rouge2"] && (
+                  <>
+                    Rouge-2 Score:: {result[0]["rouge2"]}
+                    <br />
+                  </>
+                )}
+                {result[0]["rougeL"] && (
+                  <>
+                    Rouge-L Score:: {result[0]["rougeL"]}
+                    <br />
+                  </>
+                )}
                 <br />
-                BLEU score: {result["bleu_score"]}
                 <br />
-                Rouge-1 Score:: {result["rouge1"]}
+                RNN:
                 <br />
-                Rouge-2 Score:: {result["rouge1"]}
+                indonesia: {result[1]["indonesia"]}
                 <br />
-                Rouge-L Score:: {result["rougeL"]}
+                {result[1]["luwu"] && (
+                  <>
+                    {`luwu: ${result[1]["luwu"]}`}
+                    <br />
+                  </>
+                )}
+                pred: {result[1]["pred"]}
+                <br />
+                {result[1]["bleu_score"] && (
+                  <>
+                    BLEU score: {result[1]["bleu_score"]}
+                    <br />
+                  </>
+                )}
+                {result[1]["rouge1"] && (
+                  <>
+                    Rouge-1 Score:: {result[1]["rouge1"]}
+                    <br />
+                  </>
+                )}
+                {result[1]["rouge2"] && (
+                  <>
+                    Rouge-2 Score:: {result[1]["rouge2"]}
+                    <br />
+                  </>
+                )}
+                {result[1]["rougeL"] && (
+                  <>
+                    Rouge-L Score:: {result[1]["rougeL"]}
+                    <br />
+                  </>
+                )}
+                <br />
                 <br />
                 ============================================================================================
               </pre>
@@ -206,11 +267,15 @@ const Home = () => {
                 {fileNames.subtitle}
               </Button>
               <Button
-                bg="#28A179"
+                bg={progress === -1 ? "#A12828" : "#28A179"}
                 onClick={onClickGenerate}
                 disabled={progress != 0}
               >
-                {progress === 0 ? "Generate" : `${progress}%`}
+                {progress === 0
+                  ? "Generate"
+                  : progress === -1
+                  ? "Terjadi kesalahan"
+                  : `${progress}%`}
               </Button>
             </div>
           </div>
